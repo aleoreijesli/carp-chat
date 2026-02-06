@@ -15,24 +15,19 @@ def score_against_domain(text: str, domain) -> int:
     for keyword in domain.keywords + domain.aliases:
         partial = fuzz.partial_ratio(text, keyword)
         token = fuzz.token_set_ratio(text, keyword)
-
-        # weighted blend
         score = max(partial, token)
         scores.append(score)
 
     return max(scores) if scores else 0
 
-
 def is_low_signal(text: str) -> bool:
     words = text.split()
 
-    # too short
-    if len(words) < 2:
+    if len(words) < 1:
         return True
 
-    # gibberish ratio
     avg_word_len = sum(len(w) for w in words) / len(words)
-    if avg_word_len > 12:
+    if avg_word_len > 10:
         return True
 
     return False
@@ -43,8 +38,7 @@ def route_domain(user_message: str):
 
     if is_low_signal(text):
         return {
-            "domain": "UNKNOWN",
-            "confidence": 0,
+            "domain": [],
             "status": "no_match"
         }
 
@@ -59,7 +53,8 @@ def route_domain(user_message: str):
 
     scored_domains.sort(key=lambda x: x[1], reverse=True)
 
-    STRONG_MATCH_THRESHOLD = 65
+    STRONG_MATCH_THRESHOLD = 70
+    WEAK_MATCH_THRESHOLD = 50
 
     strong_matches = [
         {"domain": d.id, "score": s}
@@ -67,14 +62,27 @@ def route_domain(user_message: str):
         if s >= STRONG_MATCH_THRESHOLD
     ]
 
-    if len(strong_matches) == 1:
-        domain = strong_matches[0]
+    weak_matches = [
+        {"domain": d.id, "score": s}
+        for d, s in scored_domains
+        if WEAK_MATCH_THRESHOLD <= s < STRONG_MATCH_THRESHOLD
+    ]
+
+    # --- decision logic ---
+
+    if strong_matches:
         return {
-            "domain": [domain],
+            "domain": strong_matches,
             "status": "confident"
         }
 
+    if weak_matches:
+        return {
+            "domain": weak_matches,
+            "status": "needs_clarification"
+        }
+
     return {
-        "domain": strong_matches,
-        "status": "multi_domain"
+        "domain": [],
+        "status": "no_match"
     }

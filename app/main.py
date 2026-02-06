@@ -30,52 +30,70 @@ async def dialogflow_webhook(body: DialogflowRequest):
         "status:", status
         )
 
-    # Temporary responses per domain (stub handlers)
+    # --- response logic ---
+
     if status == "confident":
-        if primary_domain == "ENROLLMENT":
+        # confident + multiple domains
+        if len(domain) > 1:
+            domain_names = [
+                d["domain"].replace("_", " ").title()
+                for d in domain
+            ]
+
             reply = (
-                "I can help you with enrollment concerns. "
-                "Would you like to know about requirements, procedures, or deadlines?"
+                f"I can help with multiple topics: {', '.join(domain_names)}. "
+                "Which one would you like to discuss first?"
             )
 
-        elif primary_domain == "SCHOLARSHIP":
-            reply = (
-                "I can assist you with scholarship-related questions. "
-                "Are you looking for available scholarships or application requirements?"
-            )
-
-        elif primary_domain == "GRADING":
-            reply = "I can help explain grading policies and GPA computation."
-
-        elif primary_domain == "SCHEDULES":
-            reply = "I can help you with class schedules and timetables."
-
-        elif primary_domain == "ACADEMIC_POLICY":
-            reply = "I can help explain academic policies and regulations."
-
-        elif primary_domain == "MEMORANDUM":
-            reply = "I can help summarize official memorandums and announcements."
-
+        # confident + single domain
         else:
-            reply = (
-                "I’m not entirely sure what topic this falls under yet. "
-                "You can ask me about enrollment, scholarships, schedules, or policies."
-            )
+            if primary_domain == "ENROLLMENT":
+                reply = (
+                    "I can help you with enrollment concerns. "
+                    "Would you like to know about requirements, procedures, or deadlines?"
+                )
+
+            elif primary_domain == "SCHOLARSHIP":
+                reply = (
+                    "I can assist you with scholarship-related questions. "
+                    "Are you looking for available scholarships or application requirements?"
+                )
+
+            elif primary_domain == "GRADING":
+                reply = "I can help explain grading policies and GPA computation."
+
+            elif primary_domain == "SCHEDULES":
+                reply = "I can help you with class schedules and timetables."
+
+            elif primary_domain == "ACADEMIC_POLICY":
+                reply = "I can help explain academic policies and regulations."
+
+            elif primary_domain == "MEMORANDUM":
+                reply = "I can help summarize official memorandums and announcements."
+
+            else:
+                reply = (
+                    "I’m not entirely sure what topic this falls under yet. "
+                    "You can ask me about enrollment, scholarships, schedules, or policies."
+                )
 
     elif status == "needs_clarification":
-        reply = (
-            "I want to make sure I understand correctly. "
-            "Is your question about enrollment, scholarships, grading, schedules, "
-            "academic policies, or memorandums?"
-        )
+        domain_names = [
+            d["domain"].replace("_", " ").title()
+            for d in domain
+        ]
 
-    elif status == "multi_domain":
-        domain_names = [d["domain"].replace("_", " ").title() for d in domain]
-
-        reply = (
-            f"I can help with multiple topics: {', '.join(domain_names)}. "
-            "Which one would you like to discuss first?"
-        )
+        if domain_names:
+            reply = (
+                f"I might be referring to {', '.join(domain_names)}. "
+                "Could you clarify which one you mean?"
+            )
+        else:
+            reply = (
+                "I want to make sure I understand correctly. "
+                "Is your question about enrollment, scholarships, grading, schedules, "
+                "academic policies, or memorandums?"
+            )
 
     else:  # no_match
         reply = (
