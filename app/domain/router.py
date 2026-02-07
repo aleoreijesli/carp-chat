@@ -55,7 +55,10 @@ def route_domain(user_message: str):
 
     STRONG_MATCH_THRESHOLD = 70
     WEAK_MATCH_THRESHOLD = 50
+    TOP_DOMINANCE_GAP = 15
 
+    top_domain, top_score = scored_domains[0]
+    
     strong_matches = [
         {"domain": d.id, "score": s}
         for d, s in scored_domains
@@ -70,11 +73,22 @@ def route_domain(user_message: str):
 
     # --- decision logic ---
 
+    # if strong_matches:
+    #     return {
+    #         "domain": strong_matches,
+    #         "status": "confident"
+    #     }
     if strong_matches:
-        return {
-            "domain": strong_matches,
-            "status": "confident"
-        }
+        filtered = [
+            m for m in strong_matches
+            if top_score - m["score"] <= TOP_DOMINANCE_GAP
+        ]
+
+    return {
+        "domain": filtered,
+        "status": "confident"
+    }
+
 
     if weak_matches:
         return {
