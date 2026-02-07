@@ -58,7 +58,7 @@ def route_domain(user_message: str):
     TOP_DOMINANCE_GAP = 15
 
     top_domain, top_score = scored_domains[0]
-    
+
     strong_matches = [
         {"domain": d.id, "score": s}
         for d, s in scored_domains
@@ -84,10 +84,10 @@ def route_domain(user_message: str):
             if top_score - m["score"] <= TOP_DOMINANCE_GAP
         ]
 
-    return {
-        "domain": filtered,
-        "status": "confident"
-    }
+        return {
+            "domain": filtered,
+            "status": "confident"
+        }
 
 
     if weak_matches:
